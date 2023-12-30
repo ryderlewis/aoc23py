@@ -12,10 +12,18 @@ class Board:
     def add_symbol(self, row, col, val):
         self._symbols.append((row, col, val))
 
-    def sym_nums(self):
+    def sym_nums(self) -> iter:
         for r, c, v in self._numbers:
             if any(r - 1 <= sr <= r + 1 and c - 1 <= sc <= c + len(v) for sr, sc, _ in self._symbols):
-                yield r, c, v
+                yield int(v)
+
+    def gears(self) -> iter:
+        for sr, sc, sv in self._symbols:
+            if sv == '*':
+                nums = [v for r, c, v in self._numbers
+                        if r - 1 <= sr <= r + 1 and c - 1 <= sc <= c + len(v)]
+                if len(nums) == 2:
+                    yield int(nums[0]), int(nums[1])
 
 class Day03(Day):
     def __init__(self, *args, **kwargs):
@@ -23,13 +31,11 @@ class Day03(Day):
 
     def part1(self) -> str:
         b = self.board()
-        s = 0
-        for r, c, v in b.sym_nums():
-            s += int(v)
-        return str(s)
+        return str(sum(b.sym_nums()))
 
     def part2(self) -> str:
-        return "day03 2"
+        b = self.board()
+        return str(sum(x * y for x, y in b.gears()))
 
     def board(self) -> Board:
         b = Board()
