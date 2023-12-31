@@ -1,4 +1,5 @@
 from .day import Day
+from math import lcm
 
 
 class Day08(Day):
@@ -19,13 +20,33 @@ class Day08(Day):
     def part2(self) -> str:
         steps, nodes = self.parse()
         gnodes = [n for n in nodes if n[-1] == 'A']
-        s = 0
-        while not all(n[-1] == 'Z' for n in gnodes):
-            direction = steps[s % len(steps)]
-            gnodes = [nodes[g][0 if direction == 'L' else 1] for g in gnodes]
-            s += 1
+        counts = []
 
-        return str(s)
+        for n in gnodes:
+            initial, offset = 0, 0
+            for s in self.steps(n):
+                if initial == 0:
+                    initial = s
+                elif offset == 0:
+                    offset = s - initial
+                else:
+                    if initial == offset == s - initial - offset:
+                        counts.append(initial)
+                    else:
+                        raise Exception(f"{n}: {initial}, {offset}, {s-initial-offset}")
+                    break
+
+        return str(lcm(*counts))
+
+    def steps(self, node):
+        steps, nodes = self.parse()
+        s = 0
+        while True:
+            if node[-1] == 'Z':
+                yield s
+            direction = steps[s % len(steps)]
+            node = nodes[node][0 if direction == 'L' else 1]
+            s += 1
 
     def parse(self) -> tuple[str, dict]:
         lines = self.data_lines()
