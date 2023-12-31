@@ -5,9 +5,10 @@ from functools import total_ordering
 
 @total_ordering
 class Hand:
-    def __init__(self, *, cards, bid):
+    def __init__(self, *, cards: str, bid: int, jokers: bool):
         self.cards = cards
         self.bid = bid
+        self.jokers = jokers
         self._hand_type = None
         self._order = None
         self.__parse()
@@ -23,6 +24,12 @@ class Hand:
 
     def __hand_type(self) -> int:
         c = Counter(self.cards)
+        if self.jokers:
+            if 'J' in c and len(c) > 1:
+                jokers = c['J']
+                del c['J']
+                major_card = c.most_common(1)[0][0]
+                c[major_card] += jokers
         if len(c) == 5:
             return 7  # high card
         elif len(c) == 4:
@@ -48,7 +55,10 @@ class Hand:
             elif c == 'T':
                 vals.append(10)
             elif c == 'J':
-                vals.append(11)
+                if self.jokers:
+                    vals.append(1)
+                else:
+                    vals.append(11)
             elif c == 'Q':
                 vals.append(12)
             elif c == 'K':
@@ -65,18 +75,22 @@ class Day07(Day):
         super().__init__(*args, **kwargs)
 
     def part1(self) -> str:
-        hands = self.hands()
+        hands = self.hands(False)
         s = 0
         for r, h in enumerate(sorted(hands, reverse=True), 1):
             s += r * h.bid
         return str(s)
 
     def part2(self) -> str:
-        return "dayXX 2"
+        hands = self.hands(True)
+        s = 0
+        for r, h in enumerate(sorted(hands, reverse=True), 1):
+            s += r * h.bid
+        return str(s)
 
-    def hands(self) -> list[Hand]:
+    def hands(self, jokers: bool) -> list[Hand]:
         hands = []
         for line in self.data_lines():
             cards, bid = line.split()
-            hands.append(Hand(cards=cards, bid=int(bid)))
+            hands.append(Hand(cards=cards, bid=int(bid), jokers=jokers))
         return hands
