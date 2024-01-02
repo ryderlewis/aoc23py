@@ -8,8 +8,13 @@ class Day11(Day):
         self._cols = 0
 
     def part1(self) -> str:
-        grid = self.grid()
-        galaxies = [(r, c) for r in range(len(grid)) for c in range(len(grid[0])) if grid[r][c] == '#']
+        return self.result(expand=1)
+
+    def part2(self) -> str:
+        return self.result(expand=999_999)
+
+    def result(self, *, expand: int) -> str:
+        galaxies = self.galaxy_coords(expand=expand)
         s = 0
         for i in range(len(galaxies)):
             for j in range(i+1, len(galaxies)):
@@ -17,26 +22,21 @@ class Day11(Day):
                 s += abs(galaxies[i][1] - galaxies[j][1])
         return str(s)
 
-    def part2(self) -> str:
-        return "dayXX 2"
-
-    def grid(self) -> list[list[str]]:
+    def galaxy_coords(self, *, expand: int) -> list[tuple[int, int]]:
         inputs = self.data_lines()
-        outputs = []
+        coords = []
         blank_rows = set([r for r, line in enumerate(inputs) if not any(c == '#' for c in line)])
         blank_cols = set([c for c in range(len(inputs[0])) if not any(line[c] == '#' for line in inputs)])
+
+        row_expand = 0
         for row, line in enumerate(inputs):
             if row in blank_rows:
-                for double in range(2):
-                    outputs.append(['.' for _ in range(len(inputs[0]) + len(blank_cols))])
+                row_expand += expand
             else:
-                output = []
+                col_expand = 0
                 for col, char in enumerate(line):
                     if col in blank_cols:
-                        for double in range(2):
-                            output.append('.')
-                    else:
-                        output.append(char)
-                outputs.append(output)
-        return outputs
-
+                        col_expand += expand
+                    elif char == '#':
+                        coords.append((row + row_expand, col + col_expand))
+        return coords
