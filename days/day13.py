@@ -1,5 +1,6 @@
 from .day import Day
 
+
 class Grid:
     def __init__(self, rows):
         self.rows = rows
@@ -23,14 +24,6 @@ class Grid:
                     break
             if smudges == smudge_count:
                 yield i
-
-    def __str__(self) -> str:
-        output = []
-        for i, line in enumerate(self.rows):
-            starting = 'Grid(' if i == 0 else '     '
-            ending = ')' if i == len(self.rows) - 1 else ''
-            output.append(f"{starting}{line}{ending}")
-        return "\n".join(output)
 
 
 class Day13(Day):
