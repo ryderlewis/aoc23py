@@ -18,6 +18,7 @@ from .day16 import Day16
 from .day17 import Day17
 from .day18 import Day18
 from .day19 import Day19
+from .day20 import Day20
 
 
 def factory(*, filename: str, day: int, part: int) -> Day:
@@ -64,5 +65,7 @@ def factory(*, filename: str, day: int, part: int) -> Day:
         return Day18(**kwargs)
     elif day == 19:
         return Day19(**kwargs)
+    elif day == 20:
+        return Day20(**kwargs)
     else:
         return Day(**kwargs)
