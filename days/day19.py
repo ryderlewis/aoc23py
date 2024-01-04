@@ -21,7 +21,62 @@ class Day19(Day):
 
     def part2(self) -> str:
         _, workflows = self.parse()
-        return "dayXX 2"
+        return str(Day19._count(workflows, 'in', range(1, 4001), range(1, 4001), range(1, 4001), range(1, 4001)))
+
+    @staticmethod
+    def _count(workflows: dict[str, Workflow], curr: str, xrange: range, mrange: range, arange: range, srange: range) -> int:
+        if curr == 'A':
+            return len(xrange)*len(mrange)*len(arange)*len(srange)
+        if curr == 'R':
+            return 0
+
+        count = 0
+        workflow = workflows[curr]
+        for condition in workflow.conditions:
+            if condition.var is None:
+                count += Day19._count(workflows, condition.workflow, xrange, mrange, arange, srange)
+            else:
+                if condition.var == 'x':
+                    if condition.comp == '<':
+                        new_xrange = Day19._range_overlap(xrange, range(1, condition.val))
+                        xrange = Day19._range_overlap(xrange, range(condition.val, 4001))
+                    else:
+                        new_xrange = Day19._range_overlap(xrange, range(condition.val+1, 4001))
+                        xrange = Day19._range_overlap(xrange, range(1, condition.val+1))
+                    if new_xrange:
+                        count += Day19._count(workflows, condition.workflow, new_xrange, mrange, arange, srange)
+                elif condition.var == 'm':
+                    if condition.comp == '<':
+                        new_mrange = Day19._range_overlap(mrange, range(1, condition.val))
+                        mrange = Day19._range_overlap(mrange, range(condition.val, 4001))
+                    else:
+                        new_mrange = Day19._range_overlap(mrange, range(condition.val+1, 4001))
+                        mrange = Day19._range_overlap(mrange, range(1, condition.val+1))
+                    if new_mrange:
+                        count += Day19._count(workflows, condition.workflow, xrange, new_mrange, arange, srange)
+                elif condition.var == 'a':
+                    if condition.comp == '<':
+                        new_arange = Day19._range_overlap(arange, range(1, condition.val))
+                        arange = Day19._range_overlap(arange, range(condition.val, 4001))
+                    else:
+                        new_arange = Day19._range_overlap(arange, range(condition.val+1, 4001))
+                        arange = Day19._range_overlap(arange, range(1, condition.val+1))
+                    if new_arange:
+                        count += Day19._count(workflows, condition.workflow, xrange, mrange, new_arange, srange)
+                else:
+                    if condition.comp == '<':
+                        new_srange = Day19._range_overlap(srange, range(1, condition.val))
+                        srange = Day19._range_overlap(srange, range(condition.val, 4001))
+                    else:
+                        new_srange = Day19._range_overlap(srange, range(condition.val+1, 4001))
+                        srange = Day19._range_overlap(srange, range(1, condition.val+1))
+                    if new_srange:
+                        count += Day19._count(workflows, condition.workflow, xrange, mrange, arange, new_srange)
+        return count
+
+    @staticmethod
+    def _range_overlap(a: range, b: range) -> range:
+        return range(max(a.start, b.start), min(a.stop, b.stop)) or None
 
     def parse(self) -> tuple[tuple[Part, ...], dict[str, Workflow]]:
         parts = []
@@ -66,7 +121,7 @@ class Day19(Day):
 
     @staticmethod
     def _accepted(part: Part, workflows: dict[str, Workflow]) -> bool:
-        print(f"{part}: in", end='')
+        # print(f"{part}: in", end='')
         workflow = workflows['in']
         while True:
             for condition in workflow.conditions:
@@ -89,12 +144,12 @@ class Day19(Day):
                         test = pval > condition.val
 
                 if test:
-                    print(f" -> {condition.workflow}", end='')
+                    # print(f" -> {condition.workflow}", end='')
                     if condition.workflow == 'A':
-                        print()
+                        # print()
                         return True
                     elif condition.workflow == 'R':
-                        print()
+                        # print()
                         return False
                     else:
                         workflow = workflows[condition.workflow]
