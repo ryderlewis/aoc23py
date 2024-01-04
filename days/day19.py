@@ -20,6 +20,7 @@ class Day19(Day):
         return str(s)
 
     def part2(self) -> str:
+        _, workflows = self.parse()
         return "dayXX 2"
 
     def parse(self) -> tuple[tuple[Part, ...], dict[str, Workflow]]:
@@ -47,21 +48,21 @@ class Day19(Day):
         label, rest = line.rstrip('}').split('{')
         conditions = []
         for c in rest.split(','):
-            if ':' in c:
-                equation, workflow = c.split(':')
-                if '<' in equation:
-                    comp = '<'
-                else:
-                    comp = '>'
-                var, val = equation.split(comp)
-                conditions.append(Condition(var=var, val=int(val), comp=comp, workflow=workflow))
-            else:
-                conditions.append(Condition(workflow=c))
+            conditions.append(Day19._parse_condition(c))
         return Workflow(label=label, conditions=conditions)
 
     @staticmethod
-    def _parse_condition(line: str) -> Condition:
-        pass
+    def _parse_condition(c: str) -> Condition:
+        if ':' in c:
+            equation, workflow = c.split(':')
+            if '<' in equation:
+                comp = '<'
+            else:
+                comp = '>'
+            var, val = equation.split(comp)
+            return Condition(var=var, val=int(val), comp=comp, workflow=workflow)
+        else:
+            return Condition(workflow=c)
 
     @staticmethod
     def _accepted(part: Part, workflows: dict[str, Workflow]) -> bool:
