@@ -1,6 +1,7 @@
 from .day import Day
 from collections import namedtuple
 from collections.abc import Iterable
+import math
 
 Signal = namedtuple('Signal', 'source dest high')
 
@@ -75,10 +76,28 @@ class Day20(Day):
         return str(slow * shigh)
 
     def part2(self) -> str:
-        return "day20 2"
+        modules = self.make_modules()
+        watchlist = set()
+        for m in modules.values():
+            if 'rx' in m.destinations:
+                watchlist.add(m.name)
+        extended_watchlist = {}
+        for w in watchlist:
+            for m in modules.values():
+                if w in m.destinations:
+                    extended_watchlist[m.name] = 0
+        for i in range(1, 100_000):
+            high_senders = self.push_button_rx(i, modules, set(extended_watchlist.keys()))
+            if len(high_senders):
+                for h in high_senders:
+                    if extended_watchlist[h] == 0:
+                        extended_watchlist[h] = i
+                if all(v > 0 for v in extended_watchlist.values()):
+                    break;
+        return str(math.lcm(*extended_watchlist.values()))
 
     @staticmethod
-    def push_button(modules) -> tuple[int, int]:
+    def push_button(modules: dict[str, Module]) -> tuple[int, int]:
         low, high = 0, 0
         signals = [Signal('button', 'broadcaster', False)]
         while len(signals) > 0:
@@ -91,6 +110,18 @@ class Day20(Day):
                 signals.append(relay_signal)
 
         return low, high
+
+    @staticmethod
+    def push_button_rx(push_count: int, modules: dict[str, Module], watchlist: set[str]) -> set[str]:
+        output = set()
+        signals = [Signal('button', 'broadcaster', False)]
+        while len(signals) > 0:
+            signal = signals.pop(0)
+            if signal.source in watchlist and signal.high:
+                output.add(signal.source)
+            for relay_signal in modules[signal.dest].receive(signal):
+                signals.append(relay_signal)
+        return output
 
     def make_modules(self) -> dict[str, Module]:
         modules = {}
