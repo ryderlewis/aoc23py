@@ -1,16 +1,16 @@
 from .day import Day
 from collections import namedtuple
 
-Step = namedtuple('Step', 'direction steps rgb')
-RGB = namedtuple('RGB', 'red green blue')
+Step = namedtuple('Step', 'direction steps')
+Coordinate = namedtuple('Coordinate', 'x y')
 
 
 class Day18(Day):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def part1(self) -> str:
-        steps = self.parse()
+    @staticmethod
+    def area(steps: tuple[Step, ...]) -> int:
         curr = (0, 0)
         coords = {curr}
         for s in steps:
@@ -53,15 +53,43 @@ class Day18(Day):
                 visited.add((row, col+1))
 
         area = (max_row-min_row+1)*(max_col-min_col+1)-len(visited)+trench_size
-        return str(area)
+        return area
+
+    def part1(self) -> str:
+        s = []
+        for line in self.data_lines():
+            direction, steps, _ = line.split()
+            s.append(Step(direction, int(steps)))
+        return str(self.area(tuple(s)))
 
     def part2(self) -> str:
-        return "day18 2"
+        coords = self.coordinates()
 
-    def parse(self) -> tuple[Step, ...]:
+        s = 0
+        p = 0
+        for i in range(len(coords)):
+            c1, c2 = coords[i], coords[(i+1) % len(coords)]
+            s += (c1.x * c2.y - c2.x * c1.y)
+            p += abs(c1.x - c2.x) + abs(c1.y - c2.y)
+        polygon_area = abs(s)/2
+        outside_area = 0.5 * p + 1
+
+        return str(int(polygon_area + outside_area))
+
+    def coordinates(self) -> tuple[Coordinate, ...]:
         ret = []
+        x, y = 0, 0
         for line in self.data_lines():
-            direction, steps, colors = line.split()
-            red, green, blue = map(lambda x: int(x, 16), (colors[2:4], colors[4:6], colors[6:8]))
-            ret.append(Step(direction, int(steps), RGB(red, green, blue)))
-        return tuple(ret)
+            _, _, rgb = line.split()
+            steps = int(rgb[2:7], 16)
+            di = int(rgb[7:8])
+            if di == 0:  # R
+                x += steps
+            elif di == 1:  # D
+                y -= steps
+            elif di == 2:  # L
+                x -= steps
+            else:  # U
+                y += steps
+            ret.append(Coordinate(x=x, y=y))
+        return tuple(ret[-1:] + ret[:-1])
