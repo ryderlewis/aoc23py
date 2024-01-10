@@ -40,7 +40,45 @@ class Day21(Day):
         return str(len([1 for v in visited.values() if v % 2 == 0]))
 
     def part2(self) -> str:
-        return "dayXX 2"
+        maze = self.maze()
+        rows = len(maze)
+        cols = len(maze[0])
+        to_visit = []
+        visited = {}
+        for r in range(rows):
+            for c in range(cols):
+                if maze[r][c] == 'S':
+                    to_visit.append((r, c, 0))
+                    visited[(r, c)] = 0
+                    break
+            if len(to_visit):
+                break
+
+        # starting position is the one to_visit
+        last_count = 0
+        while len(to_visit):
+            r, c, count = to_visit.pop(0)
+            if count != last_count:
+                print(f"{last_count}: {len([1 for v in visited.values() if v % 2 == last_count % 2])}")
+                # print(f"{last_count}: {len([1 for v in visited.values() if v == last_count])}")
+                if count > 1000:
+                    break
+                last_count = count
+
+            if (r-1, c) not in visited and maze[(r-1) % rows][c % cols] in '.S':
+                to_visit.append((r-1, c, count+1))
+                visited[(r-1, c)] = count+1
+            if (r+1, c) not in visited and maze[(r+1) % rows][c % cols] in '.S':
+                to_visit.append((r+1, c, count+1))
+                visited[(r+1, c)] = count+1
+            if (r, c-1) not in visited and maze[r % rows][(c-1) % cols] in '.S':
+                to_visit.append((r, c-1, count+1))
+                visited[(r, c-1)] = count+1
+            if (r, c+1) not in visited and maze[r % rows][(c+1) % cols] in '.S':
+                to_visit.append((r, c+1, count+1))
+                visited[(r, c+1)] = count+1
+
+        return "day 2"
 
     def maze(self) -> list[list[str]]:
         return [list(x) for x in self.data_lines()]
