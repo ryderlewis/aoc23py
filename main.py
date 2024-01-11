@@ -3,6 +3,7 @@ from days import factory
 import sys
 
 if __name__ == '__main__':
+    sys. setrecursionlimit(100_000)
     if len(sys.argv) < 4:
         raise Exception("Must provide arguments for the day, part, and filename")
     day = int(sys.argv[1])
