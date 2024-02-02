@@ -55,35 +55,64 @@ class Maze:
         self._slippery = False
         return self._max_walk_bfs()
 
-    def _max_walk_bfs(self, ) -> int:
-        end_pos = Coord(row=0, col=1)
-        start_pos = Coord(row=self.row_count-1, col=self.col_count-2)
+    def _max_walk_bfs(self) -> int:
+        """
+        Walks through max lengths, starting at both the beginning and end, and meeting in the middle
+        """
+        start_pos = Coord(row=0, col=1)
+        end_pos = Coord(row=self.row_count-1, col=self.col_count-2)
         max_len = 0
 
-        to_visit = [(start_pos, set())]
-        while len(to_visit) > 0:
-            coord, path = to_visit.pop(0)
-            if coord == end_pos:
-                max_len = max(max_len, len(path))
-                print(f"So far {max_len}")
+        to_visit_start = [(start_pos, {start_pos})]
+        to_visit_end = [(end_pos, {end_pos})]
 
-            next_coords = []
-            if coord.col > 0:
-                next_coords.append(Coord(coord.row, coord.col-1))
-            if coord.col < self.col_count - 1:
-                next_coords.append(Coord(coord.row, coord.col+1))
-            if coord.row > 0:
-                next_coords.append(Coord(coord.row-1, coord.col))
-            if coord.row < self.row_count - 1:
-                next_coords.append(Coord(coord.row+1, coord.col))
+        alt = 0
+        while len(to_visit_start) > 0 and len(to_visit_end) > 0:
+            if alt == 0:
+                to_visit, to_visit_other = to_visit_start, to_visit_end
+            else:
+                to_visit, to_visit_other = to_visit_end, to_visit_start
 
-            npath = None
-            for n in next_coords:
-                if n not in path and self.grid[n.row][n.col] in '.<>^v':
-                    if npath is None:
-                        npath = {coord}
-                        npath.update(path)
-                    to_visit.append((n, npath))
+            next_to_visit = []
+            next_seen = set()
+            while len(to_visit) > 0:
+                coord, path = to_visit.pop()
+                path = frozenset(path)
+                if (coord, path) in next_seen:
+                    continue
+                next_seen.add((coord, path))
+
+                next_coords = []
+                if coord.col > 0:
+                    next_coords.append(Coord(coord.row, coord.col-1))
+                if coord.col < self.col_count - 1:
+                    next_coords.append(Coord(coord.row, coord.col+1))
+                if coord.row > 0:
+                    next_coords.append(Coord(coord.row-1, coord.col))
+                if coord.row < self.row_count - 1:
+                    next_coords.append(Coord(coord.row+1, coord.col))
+
+                npath = {coord}
+                npath.update(path)
+                for n in next_coords:
+                    if n not in path and self.grid[n.row][n.col] in '.<>^v':
+                        for o in to_visit_other:
+                            if n == o[0] and npath.isdisjoint(o[1]):
+                                max_len = max(max_len, len(npath) + len(o[1]))
+                                print(f"So far {max_len}")
+                                # if max_len >= 154:
+                                #     print(f"path: { {n}|npath|o[1] }")
+                                break
+
+                        if not all(n == o[0] or n in o[1] for o in to_visit_other):
+                            next_to_visit.append((n, npath))
+
+            if alt == 0:
+                to_visit_start = next_to_visit
+            else:
+                to_visit_end = next_to_visit
+            alt += 1
+            alt %= 2
 
         return max_len
 
