@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from .day import Day
 from collections import namedtuple
 from functools import cache
@@ -84,12 +86,18 @@ class Maze:
 
                 next_coords = []
                 if coord.col > 0:
-                    next_coords.append(Coord(coord.row, coord.col-1))
+                    # move left. but if we're on the top or bottom row, we can't do this
+                    if 0 < coord.row < self.row_count - 1:
+                        next_coords.append(Coord(coord.row, coord.col-1))
                 if coord.col < self.col_count - 1:
+                    # move right
                     next_coords.append(Coord(coord.row, coord.col+1))
                 if coord.row > 0:
-                    next_coords.append(Coord(coord.row-1, coord.col))
+                    # move up. but if we're on the left or right column, we can't do this
+                    if 0 < coord.col < self.col_count - 1:
+                        next_coords.append(Coord(coord.row-1, coord.col))
                 if coord.row < self.row_count - 1:
+                    # move down
                     next_coords.append(Coord(coord.row+1, coord.col))
 
                 npath = {coord}
@@ -98,10 +106,10 @@ class Maze:
                     if n not in path and self.grid[n.row][n.col] in '.<>^v':
                         for o in to_visit_other:
                             if n == o[0] and npath.isdisjoint(o[1]):
-                                max_len = max(max_len, len(npath) + len(o[1]))
-                                print(f"So far {max_len}")
-                                # if max_len >= 154:
-                                #     print(f"path: { {n}|npath|o[1] }")
+                                new_max_len = max(max_len, len(npath) + len(o[1]))
+                                if new_max_len > max_len:
+                                    max_len = new_max_len
+                                    print(f"{datetime.now()}: So far {max_len}")
                                 break
 
                         if not all(n == o[0] or n in o[1] for o in to_visit_other):

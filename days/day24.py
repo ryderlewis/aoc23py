@@ -1,5 +1,7 @@
 from .day import Day
 from fractions import Fraction
+import numpy as np
+from scipy.optimize import least_squares
 
 
 class Entry:
@@ -85,7 +87,92 @@ class Day24(Day):
         return str(i_count_real)
 
     def part2(self) -> str:
-        return "day24 2"
+        # This solution was provided by the o1-mini GPT model. Too much hard math!!
+        # Load the data
+        positions = []
+        velocities = []
+        for entry in self.entries():
+            positions.append([entry.px, entry.py, entry.pz])
+            velocities.append([entry.vx, entry.vy, entry.vz])
+        positions = np.array(positions)
+        velocities = np.array(velocities)
+
+        # Verify the number of objects
+        num_objects = len(positions)
+        print(f"Number of objects parsed: {num_objects}")
+
+        # Step 2: Define the Residuals Function
+        def residuals(params, positions, velocities):
+            x_s, y_s, z_s, v_sx, v_sy, v_sz = params
+            res = []
+            for i in range(len(positions)):
+                x_i, y_i, z_i = positions[i]
+                v_ix, v_iy, v_iz = velocities[i]
+
+                # First Equation: (x_s -x_i)*(v_iy - v_sy) - (y_s - y_i)*(v_ix - v_sx) = 0
+                res1 = (x_s - x_i) * (v_iy - v_sy) - (y_s - y_i) * (v_ix - v_sx)
+
+                # Second Equation: (x_s -x_i)*(v_iz - v_sz) - (z_s - z_i)*(v_ix - v_sx) = 0
+                res2 = (x_s - x_i) * (v_iz - v_sz) - (z_s - z_i) * (v_ix - v_sx)
+
+                res.extend([res1, res2])
+            return res
+
+        # Step 3: Initial Guess
+        # A reasonable initial guess is the average position and average velocity
+        initial_guess = [
+            np.mean(positions[:,0]),  # x_s
+            np.mean(positions[:,1]),  # y_s
+            np.mean(positions[:,2]),  # z_s
+            np.mean(velocities[:,0]), # v_sx
+            np.mean(velocities[:,1]), # v_sy
+            np.mean(velocities[:,2])  # v_sz
+        ]
+
+        print("Initial guess for parameters:")
+        print(f"x_s: {initial_guess[0]}, y_s: {initial_guess[1]}, z_s: {initial_guess[2]}")
+        print(f"v_sx: {initial_guess[3]}, v_sy: {initial_guess[4]}, v_sz: {initial_guess[5]}")
+
+        # Step 4: Solve the System Using Nonlinear Solver
+        result = least_squares(
+            residuals,
+            initial_guess,
+            args=(positions, velocities),
+            method='lm',  # Levenberg-Marquardt algorithm
+            ftol=1e-12,   # Tolerance for termination by the change of the cost function
+            xtol=1e-12,   # Tolerance for termination by the change of the solution
+            gtol=1e-12    # Tolerance for termination by the norm of the gradient
+        )
+
+        # Step 5: Extract and Display the Solution
+        if result.success:
+            x_s, y_s, z_s, v_sx, v_sy, v_sz = result.x
+            print("\nSolution Found:")
+            print("Starting position of the solution object:")
+            print(f"x_s = {x_s}")
+            print(f"y_s = {y_s}")
+            print(f"z_s = {z_s}")
+
+            print("\nVelocity of the solution object:")
+            print(f"v_sx = {v_sx}")
+            print(f"v_sy = {v_sy}")
+            print(f"v_sz = {v_sz}")
+
+            # Optional: Verify Residuals
+            final_residuals = residuals(result.x, positions, velocities)
+            max_residual = np.max(np.abs(final_residuals))
+            print(f"\nMaximum residual after optimization: {max_residual}")
+            if np.allclose(final_residuals, 0, atol=1e-6):
+                print("All residuals are effectively zero. Exact solution achieved.")
+            else:
+                print("Residuals are not all zero. Check the data or optimization parameters.")
+        else:
+            print("Optimization failed. Try adjusting the initial guess or solver parameters.")
+
+        return f"{int(x_s+y_s+z_s)}"
 
     def entries(self) -> tuple[Entry, ...]:
         return tuple([Entry(line) for line in self.data_lines()])
+
+
+
