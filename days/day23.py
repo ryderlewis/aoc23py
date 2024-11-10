@@ -12,28 +12,20 @@ class Maze:
         self.row_count = len(input_lines)
         self.col_count = len(input_lines[0])
         self.grid = tuple(tuple(line) for line in input_lines)
-        self._slippery = True
 
     def max_walk(self) -> int:
-        self._slippery = True
-        return self._max_walk_recur(frozenset(), Coord(row=0, col=1))
+        return self._max_walk_slippery(frozenset(), Coord(row=0, col=1))
 
     @cache
-    def _max_walk_recur(self, visited: frozenset[tuple[int, int]], coord: Coord) -> int:
+    def _max_walk_slippery(self, visited: frozenset[tuple[int, int]], coord: Coord) -> int:
         if coord.row == self.row_count - 1 and coord.col == self.col_count - 2:
             return len(visited)
 
         kind = self.grid[coord.row][coord.col]
-        if self._slippery:
-            can_left = kind in '.<' and coord.col > 0
-            can_right = kind in '.>' and coord.col < self.col_count - 1
-            can_up = kind in '.^' and coord.row > 0
-            can_down = kind in '.v' and coord.row < self.row_count - 1
-        else:
-            can_left = coord.col > 0
-            can_right = coord.col < self.col_count - 1
-            can_up = coord.row > 0
-            can_down = coord.row < self.row_count - 1
+        can_left = kind in '.<' and coord.col > 0
+        can_right = kind in '.>' and coord.col < self.col_count - 1
+        can_up = kind in '.^' and coord.row > 0
+        can_down = kind in '.v' and coord.row < self.row_count - 1
 
         next_coords = []
         if can_left:
@@ -50,11 +42,10 @@ class Maze:
         v.add(coord)
         for next_coord in next_coords:
             if next_coord not in visited and self.grid[next_coord.row][next_coord.col] in '.<>^v':
-                max_len = max(max_len, self._max_walk_recur(frozenset(v), next_coord))
+                max_len = max(max_len, self._max_walk_slippery(frozenset(v), next_coord))
         return max_len
 
     def max_walk_2(self) -> int:
-        self._slippery = False
         return self._max_walk_bfs()
 
     def _max_walk_bfs(self) -> int:
@@ -68,9 +59,10 @@ class Maze:
         to_visit_start = [(start_pos, {start_pos})]
         to_visit_end = [(end_pos, {end_pos})]
 
-        alt = 0
+        alt = False
         while len(to_visit_start) > 0 and len(to_visit_end) > 0:
-            if alt == 0:
+            alt = not alt
+            if alt:
                 to_visit, to_visit_other = to_visit_start, to_visit_end
             else:
                 to_visit, to_visit_other = to_visit_end, to_visit_start
@@ -115,12 +107,10 @@ class Maze:
                         if not all(n == o[0] or n in o[1] for o in to_visit_other):
                             next_to_visit.append((n, npath))
 
-            if alt == 0:
+            if alt:
                 to_visit_start = next_to_visit
             else:
                 to_visit_end = next_to_visit
-            alt += 1
-            alt %= 2
 
         return max_len
 
