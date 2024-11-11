@@ -240,5 +240,7 @@ class Day23(Day):
         return str(maze.max_walk())
 
     def part2(self) -> str:
+        # 6522 is getting close to the right answer!
+        # it's the answer for somebody else, just not me.
         maze = Maze(self.data_lines())
         return str(maze.max_walk_2())
