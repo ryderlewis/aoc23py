@@ -46,7 +46,7 @@ class Maze:
         return max_len
 
     def max_walk_2(self) -> int:
-        return self._max_walk_bfs()
+        return self._max_walk_pruning()
 
     def _max_walk_bfs(self) -> int:
         """
@@ -60,7 +60,9 @@ class Maze:
         to_visit_end = [(end_pos, {end_pos})]
 
         alt = False
+        loop_count = 0
         while len(to_visit_start) > 0 and len(to_visit_end) > 0:
+            loop_count += 1
             alt = not alt
             if alt:
                 to_visit, to_visit_other = to_visit_start, to_visit_end
@@ -112,7 +114,111 @@ class Maze:
             else:
                 to_visit_end = next_to_visit
 
+        print(f"{loop_count=}")
         return max_len
+
+    def _max_walk_pruning(self) -> int:
+        """
+        Walks through finding the max length, and any time there's a branch to take,
+        verifies that the branch has a path to the target
+        """
+        start_pos = Coord(row=0, col=1)
+        end_pos = Coord(row=self.row_count-1, col=self.col_count-2)
+        max_len = 0
+
+        to_visit = [(start_pos, frozenset({start_pos}))]
+
+        loop_count = 0
+        # next_seen = set()
+
+        while len(to_visit) > 0:
+            loop_count += 1
+            coord, path = to_visit.pop()
+            # if (coord, path) in next_seen:
+            #     continue
+            # next_seen.add((coord, path))
+
+            potential_next_coords = []
+            if coord.col > 0:
+                # move left. but if we're on the top or bottom row, we can't do this
+                if 0 < coord.row < self.row_count - 1:
+                    potential_next_coords.append(Coord(coord.row, coord.col-1))
+            if coord.col < self.col_count - 1:
+                # move right
+                potential_next_coords.append(Coord(coord.row, coord.col+1))
+            if coord.row > 0:
+                # move up. but if we're on the left or right column, we can't do this
+                if 0 < coord.col < self.col_count - 1:
+                    potential_next_coords.append(Coord(coord.row-1, coord.col))
+            if coord.row < self.row_count - 1:
+                # move down
+                potential_next_coords.append(Coord(coord.row+1, coord.col))
+
+            next_coords = [c for c in potential_next_coords
+                           if c not in path
+                           and self.grid[c.row][c.col] in '.<>^v']
+
+            if not next_coords:
+                continue
+
+            npath = {coord}
+            npath.update(path)
+            npath = frozenset(npath)
+
+            if len(next_coords) > 1:
+                n = self._prune_next_coords(coord, end_pos, npath, next_coords)
+                if len(n) < len(next_coords):
+                    print(f"{loop_count=}, pruned {len(next_coords)} down to {len(n)} next paths, {max_len=}, {len(to_visit)=}")
+                    next_coords = n
+
+            for n in next_coords:
+                if n == end_pos:
+                    new_max_len = max(max_len, len(npath))
+                    if new_max_len > max_len:
+                        max_len = new_max_len
+                        print(f"{datetime.now()}: So far {max_len}, len(to_visit)={len(to_visit)}")
+                else:
+                    to_visit.append((n, npath))
+
+        print(f"{loop_count=}")
+        return max_len
+
+    def _prune_next_coords(self, coord, end_pos, cpath, next_coords):
+        ret = []
+        # see if there's a path from coord to end_pos. for each one, do a BFS to see if we get to end_pos
+        for nc in next_coords:
+            to_visit = [(nc, cpath)]
+            while len(to_visit) > 0:
+                coord, path = to_visit.pop()
+
+                next_to_visit = []
+                if coord.col > 0:
+                    # move left. but if we're on the top or bottom row, we can't do this
+                    next_to_visit.append(Coord(coord.row, coord.col-1))
+                if coord.col < self.col_count - 1:
+                    # move right
+                    next_to_visit.append(Coord(coord.row, coord.col+1))
+                if coord.row > 0:
+                    # move up. but if we're on the left or right column, we can't do this
+                    next_to_visit.append(Coord(coord.row-1, coord.col))
+                if coord.row < self.row_count - 1:
+                    # move down
+                    next_to_visit.append(Coord(coord.row+1, coord.col))
+
+                next_to_visit = [c for c in next_to_visit
+                                 if c not in path
+                                 and self.grid[c.row][c.col] in '.<>^v']
+                for c in next_to_visit:
+                    if c == end_pos:
+                        # if we get to end_pos, then ensure nc is included in ret
+                        ret.append(nc)
+                        to_visit = []
+                        break
+                    else:
+                        p = {c}
+                        p.update(path)
+                        to_visit.append((c, frozenset(p)))
+        return ret
 
     def __str__(self) -> str:
         lines = []
