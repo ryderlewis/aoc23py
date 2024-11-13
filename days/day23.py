@@ -3,6 +3,7 @@ from datetime import datetime
 from .day import Day
 from collections import namedtuple
 from functools import cache
+import random
 
 Coord = namedtuple('Coord', 'row col')
 
@@ -161,6 +162,8 @@ class Maze:
             if not next_coords:
                 continue
 
+            random.shuffle(next_coords)
+
             npath = {coord}
             npath.update(path)
             npath = frozenset(npath)
@@ -240,7 +243,8 @@ class Day23(Day):
         return str(maze.max_walk())
 
     def part2(self) -> str:
-        # 6522 is getting close to the right answer!
-        # it's the answer for somebody else, just not me.
+        # 6522 is getting close to the right answer! So is 6538!
+        # these are the answer for somebody else, just not me.
+        # 6594 is the correct answer! Golang version gets to it in about 20 minutes.
         maze = Maze(self.data_lines())
         return str(maze.max_walk_2())
